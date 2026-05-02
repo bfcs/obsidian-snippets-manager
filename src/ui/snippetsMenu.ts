@@ -10,116 +10,149 @@ export default function snippetsMenu(
   plugin: MySnippetsPlugin,
   settings: MySnippetsSettings
 ) {
+  const menu = new Menu() as unknown as EnhancedMenu;
+  plugin.activeMenu = menu;
+
+  menu.onHide(() => {
+    plugin.activeMenu = null;
+    plugin.lastMenuCloseTime = Date.now();
+  });
+
+  // Force DOM menu to ensure CSS and components render correctly
+  if (typeof menu.setUseNativeMenu === "function") {
+    menu.setUseNativeMenu(false);
+  }
+
+  const menuDom = (menu as any).dom as HTMLElement;
+  menuDom.addClass("MySnippets-statusbar-menu");
+
   const windowX = window.innerWidth;
   const windowY = window.innerHeight;
-  const menuExists = document.querySelector(".menu.MySnippets-statusbar-menu");
 
-  if (!menuExists) {
-    const menu = new Menu() as unknown as EnhancedMenu;
-
-    // Force DOM menu to ensure CSS and components render correctly
-    if (typeof menu.setUseNativeMenu === 'function') {
-      menu.setUseNativeMenu(false);
-    }
-
-    const menuDom = (menu as any).dom as HTMLElement;
-    menuDom.addClass("MySnippets-statusbar-menu");
-
-    if (settings.aestheticStyle) {
-      menuDom.setAttribute(
-        "style",
-        "background-color: transparent; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
-      );
-    }
-    const customCss = app.customCss;
-    const currentSnippets = customCss.snippets;
-    const snippetsFolder = customCss.getSnippetsFolder();
-
-    currentSnippets.forEach((snippet: string) => {
-      const snippetPath = customCss.getSnippetPath(snippet);
-
-      menu.addItem((snippetElement) => {
-        snippetElement.setTitle(snippet);
-
-        const snippetElementDom = (snippetElement as any).dom as HTMLElement;
-        const toggleComponent = new ToggleComponent(snippetElementDom);
-        const buttonComponent = new ButtonComponent(snippetElementDom);
-
-        toggleComponent
-          .setValue(customCss.enabledSnippets.has(snippet))
-          .onChange((value) => {
-            try {
-              customCss.setCssEnabledStatus(snippet, value);
-              new Notice(`${value ? "Enabled" : "Disabled"} snippet: ${snippet}`);
-            } catch (err) {
-              // Silent error or handling
-            }
-          });
-
-        buttonComponent
-          .setIcon("ms-snippet")
-          .setTooltip(`Open snippet`)
-          .onClick((e: any) => {
-            app.openWithDefaultApp(snippetPath);
-          });
-        
-        buttonComponent.buttonEl.addClass("MS-OpenSnippet");
-
-        // Forcefully stop propagation on the DOM level to prevent Obsidian from closing the menu
-        snippetElementDom.addEventListener("click", (e) => {
-          e.stopPropagation();
-        }, { capture: true });
-      });
-    });
-
-    menu.addSeparator();
-
-    menu.addItem((actionsItem) => {
-      const actions = actionsItem as unknown as EnhancedMenuItem;
-      actions.setIcon(null);
-      actions.setTitle("Actions");
-      const actionsDom = (actions as any).dom as HTMLElement;
-      setAttributes(actions.titleEl, { style: "font-weight: 700" });
-
-      const reloadButton = new ButtonComponent(actionsDom);
-      const folderButton = new ButtonComponent(actionsDom);
-      const addButton = new ButtonComponent(actionsDom);
-
-      setAttributes(reloadButton.buttonEl, { style: "margin-right: 3px" });
-      setAttributes(addButton.buttonEl, { style: "margin-left: 3px" });
-
-      reloadButton
-        .setIcon("ms-reload")
-        .setTooltip("Reload snippets")
-        .onClick((e: any) => {
-          customCss.requestLoadSnippets();
-          new Notice("Snippets reloaded");
-        });
-      reloadButton.buttonEl.addClass("MySnippetsButton");
-      reloadButton.buttonEl.addClass("MS-Reload");
-
-      folderButton
-        .setIcon("ms-folder")
-        .setTooltip("Open snippets folder")
-        .onClick((e: any) => {
-          app.openWithDefaultApp(snippetsFolder);
-        });
-      folderButton.buttonEl.addClass("MySnippetsButton");
-      folderButton.buttonEl.addClass("MS-Folder");
-
-      addButton
-        .setIcon("ms-add")
-        .setTooltip("Create new snippet")
-        .onClick((e: any) => {
-          new CreateSnippetModal(app, plugin).open();
-        });
-      addButton.buttonEl.addClass("MySnippetsButton");
-      addButton.buttonEl.addClass("MS-Folder");
-    });
-
-    menu.showAtPosition({
-      x: windowX - 15,
-      y: windowY - 37,
-    });
+  if (settings.aestheticStyle) {
+    menuDom.setAttribute(
+      "style",
+      "background-color: transparent; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
+    );
   }
+
+  const { customCss } = app;
+  const currentSnippets = customCss.snippets;
+  const snippetsFolder = customCss.getSnippetsFolder();
+
+  currentSnippets.forEach((snippet: string) => {
+    const snippetPath = customCss.getSnippetPath(snippet);
+
+    menu.addItem((snippetElement) => {
+      snippetElement.setTitle(snippet);
+
+      const snippetElementDom = (snippetElement as any).dom as HTMLElement;
+      const toggleComponent = new ToggleComponent(snippetElementDom);
+      const openButton = new ButtonComponent(snippetElementDom);
+      const deleteButton = new ButtonComponent(snippetElementDom);
+
+      toggleComponent
+        .setValue(customCss.enabledSnippets.has(snippet))
+        .onChange((value) => {
+          try {
+            customCss.setCssEnabledStatus(snippet, value);
+            new Notice(`${value ? "Enabled" : "Disabled"} snippet: ${snippet}`);
+          } catch (err) {
+            // Handle error
+          }
+        });
+
+      openButton
+        .setIcon("ms-snippet")
+        .setTooltip(`Open snippet`)
+        .onClick((e: any) => {
+          app.openWithDefaultApp(snippetPath);
+        });
+      openButton.buttonEl.addClass("MS-OpenSnippet");
+
+      deleteButton
+        .setIcon("trash-2")
+        .setTooltip("Delete snippet")
+        .onClick(async () => {
+          const confirm = window.confirm(
+            `Are you sure you want to delete "${snippet}"?`
+          );
+          if (confirm) {
+            try {
+              await app.vault.adapter.remove(snippetPath);
+              customCss.requestLoadSnippets();
+              new Notice(`Deleted snippet: ${snippet}`);
+              
+              // Refresh menu with a small delay to allow vault/CSS state to sync
+              setTimeout(() => {
+                menu.hide();
+                snippetsMenu(app, plugin, settings);
+              }, 50);
+            } catch (err) {
+              new Notice("Error deleting snippet");
+            }
+          }
+        });
+      deleteButton.buttonEl.addClass("MS-DeleteSnippet");
+
+      // Prevent Obsidian from closing the menu when clicking interactive components
+      toggleComponent.toggleEl.addEventListener("click", (e) => e.stopPropagation());
+      openButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+      deleteButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+    });
+  });
+
+  menu.addSeparator();
+
+  menu.addItem((actionsItem) => {
+    const actions = actionsItem as unknown as EnhancedMenuItem;
+    actions.setIcon(null);
+    actions.setTitle("Actions");
+    const actionsDom = (actions as any).dom as HTMLElement;
+    setAttributes(actions.titleEl, { style: "font-weight: 700" });
+
+    const reloadButton = new ButtonComponent(actionsDom);
+    const folderButton = new ButtonComponent(actionsDom);
+    const addButton = new ButtonComponent(actionsDom);
+
+    setAttributes(reloadButton.buttonEl, { style: "margin-right: 3px" });
+    setAttributes(addButton.buttonEl, { style: "margin-left: 3px" });
+
+    reloadButton
+      .setIcon("ms-reload")
+      .setTooltip("Reload snippets")
+      .onClick((e: any) => {
+        customCss.requestLoadSnippets();
+        new Notice("Snippets reloaded");
+      });
+    reloadButton.buttonEl.addClass("MySnippetsButton");
+    reloadButton.buttonEl.addClass("MS-Reload");
+
+    folderButton
+      .setIcon("ms-folder")
+      .setTooltip("Open snippets folder")
+      .onClick((e: any) => {
+        app.openWithDefaultApp(snippetsFolder);
+      });
+    folderButton.buttonEl.addClass("MySnippetsButton");
+    folderButton.buttonEl.addClass("MS-Folder");
+
+    addButton
+      .setIcon("ms-add")
+      .setTooltip("Create new snippet")
+      .onClick((e: any) => {
+        new CreateSnippetModal(app, plugin).open();
+      });
+    addButton.buttonEl.addClass("MySnippetsButton");
+    addButton.buttonEl.addClass("MS-Add");
+
+    reloadButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+    folderButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+    addButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+  });
+
+  menu.showAtPosition({
+    x: windowX - 15,
+    y: windowY - 37,
+  });
 }

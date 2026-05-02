@@ -85,6 +85,10 @@ npm run build
   <Vault>/.obsidian/plugins/<plugin-id>/
   ```
 - Reload Obsidian and enable the plugin in **Settings → Community plugins**.
+- **Tip**: Use the following combined command for fast iteration:
+  ```bash
+  pnpm run build && obsidian plugin:reload id=obsidian-snippets-manager
+  ```
 
 ## Commands & settings
 
@@ -151,6 +155,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Provide defaults and validation in settings.
 - Write idempotent code paths so reload/unload doesn't leak listeners or intervals.
 - Use `this.register*` helpers for everything that needs cleanup.
+- **ALWAYS** run `pnpm run build` and `obsidian plugin:reload id=obsidian-snippets-manager` after ANY code or style modification to verify changes in real-time.
 
 **Don't**
 - Introduce network calls without an obvious user-facing reason and documentation.

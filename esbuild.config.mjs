@@ -1,6 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
+import fs from "fs";
+import path from "path";
 
 const banner =
 `/*
@@ -42,9 +44,22 @@ const context = await esbuild.context({
 	minify: prod,
 });
 
+const copyFiles = () => {
+	if (!fs.existsSync(dir)) {
+		fs.mkdirSync(dir, { recursive: true });
+	}
+	fs.copyFileSync("manifest.json", path.join(dir, "manifest.json"));
+	if (fs.existsSync("styles.css")) {
+		fs.copyFileSync("styles.css", path.join(dir, "styles.css"));
+	}
+	console.log("Manifest and Styles synced to vault.");
+};
+
 if (prod) {
 	await context.rebuild();
+	copyFiles();
 	process.exit(0);
 } else {
 	await context.watch();
+	copyFiles();
 }

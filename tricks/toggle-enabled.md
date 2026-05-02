@@ -46,9 +46,35 @@ new ToggleComponent(itemDom)
   });
 ```
 
-## 调试环境的“隐形”坑
-在本次调试中，最耗时的其实是**路径不一致**问题：
--   **源码目录**：`Repo/obsidian-snippets-manager`
--   **Build 目标**：`Repo/obsidian-vault-bfcs` (由 `esbuild.config.mjs` 定义)
--   **实际运行 Vault**：用户可能开启了另一个库（如 iCloud 中的库），导致“改了代码、build 了、reload 了，但界面没变”的灵异现象。
-**建议**：调试前务必通过 `app.vault.adapter.basePath` 确认插件生成的 `main.js` 确实在当前活跃库的目录下。
+## 补充：多交互组件共存时的陷阱 (2026-05-02 更新)
+
+在 `MenuItem` 中同时存在 `ToggleComponent` 和多个 `ButtonComponent` 时，简单的捕获拦截会导致“顾此失彼”：
+
+### 1. 盲目使用 Capture 的坑
+**现象**：Toggle 能用了，但旁边的“打开”和“删除”按钮完全没反应。
+**原因**：如果在父级 `MenuItem.dom` 的 **Capture (捕获) 阶段** 直接调用 `stopPropagation()`，事件在到达子元素（按钮）之前就被拦截了。子元素永远收不到 `click` 事件。
+
+### 2. 盲目移至 Bubble 的坑
+**现象**：所有按钮都能点击，但点击 Toggle 后菜单会立即关闭。
+**原因**：Bubble 阶段虽然能让子元素先收事件，但 Obsidian 自身的菜单关闭逻辑通常也挂载在 Bubble 阶段。如果 Obsidian 的监听器先执行，我们的拦截就太晚了。
+
+### 3. 最优解：针对子组件精准拦截 (推荐)
+与其在父级 `MenuItem.dom` 上进行复杂的捕获/冒泡拦截，最简单且稳健的方法是直接在**子组件（Toggle/Button）的 DOM** 上拦截点击事件。
+
+只要在子组件被点击时阻止事件冒泡到 `MenuItem`，Obsidian 的菜单关闭逻辑就永远不会被触发。
+
+```typescript
+// 直接在子组件的 DOM 上阻止冒泡
+toggleComponent.toggleEl.addEventListener("click", (e) => e.stopPropagation());
+openButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+deleteButton.buttonEl.addEventListener("click", (e) => e.stopPropagation());
+
+// 不需要给 MenuItem.dom 加任何额外的监听器
+```
+
+**核心优势**：
+-   **逻辑解耦**：每个组件只负责自己的交互，互不干扰。
+-   **标准行为**：点击 MenuItem 的“空白处”或标题仍然会触发 Obsidian 的默认行为（如关闭菜单），符合用户直觉。
+-   **代码简洁**：消除了 Capture 阶段带来的复杂判断。
+
+---

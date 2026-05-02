@@ -28,7 +28,7 @@ STATUS BAR MENU
 }
 
 .MySnippets-statusbar-menu {
-  width: 290px;
+  width: 320px;
   max-height: calc(100% - 90px);
 }
 
@@ -64,28 +64,44 @@ STATUS BAR MENU
 
 .MySnippets-statusbar-menu .menu-item-title {
   margin-right: 10px;
-  width: 60%;
+  width: 50%;
   line-height: initial;
   overflow-x: hidden;
   text-overflow: ellipsis;
 }
 
-.MS-OpenSnippet {
-  padding: 3px 10px;
-  border-radius: 6px;
+.MS-OpenSnippet, .MS-DeleteSnippet {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
   margin-right: 0;
-  margin-left: 8px;
+  margin-left: 10px;
   display: flex;
-  background-color: var(--interactive-accent);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  height: auto;
+  width: auto;
+  color: var(--text-muted);
 }
 
-.MS-OpenSnippet svg {
-  height: 1.35em;
-  width: 1.35em;
+.MS-OpenSnippet svg, .MS-DeleteSnippet svg {
+  height: 18px;
+  width: 18px;
+}
+
+.MS-DeleteSnippet {
+  color: var(--text-error) !important;
 }
 
 .MS-OpenSnippet:hover {
-  background-color: var(--interactive-accent);
+  color: var(--text-normal);
+}
+
+.MS-DeleteSnippet:hover {
+  color: var(--color-red) !important;
+  opacity: 0.8;
 }
 
 .MySnippetsButton {
@@ -107,7 +123,9 @@ STATUS BAR MENU
 .MySnippetsButton.MS-Reload,
 .MySnippetsButton.MS-Reload:hover,
 .MySnippetsButton.MS-Folder,
-.MySnippetsButton.MS-Folder:hover {
+.MySnippetsButton.MS-Folder:hover,
+.MySnippetsButton.MS-Add,
+.MySnippetsButton.MS-Add:hover {
   background-color: var(--interactive-accent);
 }
 
