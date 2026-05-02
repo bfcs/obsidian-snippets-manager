@@ -10,12 +10,13 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+const dir = "/Users/xy/Repo/obsidian-vault-bfcs/.obsidian/plugins/obsidian-snippets-manager";
 
 const context = await esbuild.context({
 	banner: {
 		js: banner,
 	},
-	entryPoints: ["src/main.ts"],
+	entryPoints: ["src/plugin/main.ts"],
 	bundle: true,
 	external: [
 		"obsidian",
@@ -37,7 +38,7 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: "main.js",
+	outfile: `${dir}/main.js`,
 	minify: prod,
 });
 
