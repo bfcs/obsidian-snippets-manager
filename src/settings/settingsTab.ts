@@ -17,20 +17,6 @@ export class MySnippetsSettingTab extends PluginSettingTab {
     containerEl.createEl("h2", { text: "Plugin Settings" });
 
     new Setting(containerEl)
-      .setName("Glass menu effect")
-      .setDesc(
-        "Choose to change the background from the secondary background color of your theme to a glass background."
-      )
-      .addToggle((toggle) => {
-        toggle
-          .setValue(this.plugin.settings.aestheticStyle)
-          .onChange(async (value) => {
-            this.plugin.settings.aestheticStyle = value;
-            await this.plugin.saveSettings();
-          });
-      });
-
-    new Setting(containerEl)
       .setName("Auto open new snippet")
       .setDesc(
         "Choose whether or not to open CSS snippet files immediately after creating them. It will open in your default app."

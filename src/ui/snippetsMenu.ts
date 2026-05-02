@@ -29,12 +29,6 @@ export default function snippetsMenu(
   const windowX = window.innerWidth;
   const windowY = window.innerHeight;
 
-  if (settings.aestheticStyle) {
-    menuDom.setAttribute(
-      "style",
-      "background-color: transparent; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
-    );
-  }
 
   const { customCss } = app;
   const currentSnippets = customCss.snippets;
