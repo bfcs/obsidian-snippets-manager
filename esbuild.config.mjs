@@ -12,7 +12,39 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
-const dir = "/Users/xy/Repo/obsidian-vault-bfcs/.obsidian/plugins/obsidian-snippets-manager";
+const dirs = [
+	"/Users/xy/Repo/obsidian-vault-bfcs/.obsidian/plugins/obsidian-snippets-manager",
+	"/Users/xy/obsidian-demo/.obsidian/plugins/obsidian-snippets-manager"
+];
+
+const copyFiles = () => {
+	for (const dir of dirs) {
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+		}
+		if (fs.existsSync("main.js")) {
+			fs.copyFileSync("main.js", path.join(dir, "main.js"));
+		}
+		if (fs.existsSync("manifest.json")) {
+			fs.copyFileSync("manifest.json", path.join(dir, "manifest.json"));
+		}
+		if (fs.existsSync("styles.css")) {
+			fs.copyFileSync("styles.css", path.join(dir, "styles.css"));
+		}
+	}
+	console.log("Manifest, Styles, and JS synced to vaults.");
+};
+
+const copyPlugin = {
+	name: "copy-files",
+	setup(build) {
+		build.onEnd((result) => {
+			if (result.errors.length === 0) {
+				copyFiles();
+			}
+		});
+	},
+};
 
 const context = await esbuild.context({
 	banner: {
@@ -40,26 +72,14 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: `${dir}/main.js`,
+	outfile: "main.js",
 	minify: prod,
+	plugins: [copyPlugin],
 });
-
-const copyFiles = () => {
-	if (!fs.existsSync(dir)) {
-		fs.mkdirSync(dir, { recursive: true });
-	}
-	fs.copyFileSync("manifest.json", path.join(dir, "manifest.json"));
-	if (fs.existsSync("styles.css")) {
-		fs.copyFileSync("styles.css", path.join(dir, "styles.css"));
-	}
-	console.log("Manifest and Styles synced to vault.");
-};
 
 if (prod) {
 	await context.rebuild();
-	copyFiles();
 	process.exit(0);
 } else {
 	await context.watch();
-	copyFiles();
 }
