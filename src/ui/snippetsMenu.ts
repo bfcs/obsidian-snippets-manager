@@ -25,12 +25,17 @@ export default function snippetsMenu(
 
   const menuDom = (menu as any).dom as HTMLElement;
   menuDom.addClass("MySnippets-statusbar-menu");
-  
-  // Prevent menu from closing when clicking anywhere inside the menu container
+
+  // Prevent menu from closing when clicking inside the menu container on blank areas
   ["mousedown", "mouseup", "click", "contextmenu", "pointerdown", "pointerup"].forEach((type) => {
     menuDom.addEventListener(type, (e) => {
-      e.stopPropagation();
-    });
+      const target = e.target as HTMLElement;
+      // If we're clicking the menu container itself or a menu item (but not a button/toggle inside it)
+      if (target === menuDom || (target.closest(".menu-item") && !target.closest("button") && !target.closest(".checkbox-container"))) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    }, { capture: true });
   });
 
   const windowX = window.innerWidth;
@@ -96,9 +101,14 @@ export default function snippetsMenu(
         });
       deleteButton.buttonEl.addClass("MS-DeleteSnippet");
 
-      // Prevent Obsidian from closing the menu when clicking the item or its children
-      ["mousedown", "mouseup", "click", "contextmenu", "pointerdown", "pointerup"].forEach((type) => {
-        snippetElementDom.addEventListener(type, (e) => e.stopPropagation());
+      const stopProp = (e: Event) => {
+        e.stopPropagation();
+      };
+      const events = ["click", "mousedown", "mouseup"];
+      events.forEach((type) => {
+        toggleComponent.toggleEl.addEventListener(type, stopProp);
+        openButton.buttonEl.addEventListener(type, stopProp);
+        deleteButton.buttonEl.addEventListener(type, stopProp);
       });
     });
   });
@@ -147,10 +157,15 @@ export default function snippetsMenu(
     addButton.buttonEl.addClass("MySnippetsButton");
     addButton.buttonEl.addClass("MS-Add");
 
-    // Prevent Obsidian from closing the menu when clicking the actions item or its children
-    ["mousedown", "mouseup", "click", "contextmenu", "pointerdown", "pointerup"].forEach((type) => {
-      actionsDom.addEventListener(type, (e) => e.stopPropagation());
-    });
+      const stopProp = (e: Event) => {
+        e.stopPropagation();
+      };
+      const events = ["click", "mousedown", "mouseup"];
+      events.forEach((type) => {
+        reloadButton.buttonEl.addEventListener(type, stopProp);
+        folderButton.buttonEl.addEventListener(type, stopProp);
+        addButton.buttonEl.addEventListener(type, stopProp);
+      });
   });
 
   menu.showAtPosition({
