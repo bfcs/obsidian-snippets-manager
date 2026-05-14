@@ -13,8 +13,8 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = (process.argv[2] === "production");
 const dirs = [
-	"/Users/xy/Repo/obsidian-vault-bfcs/.obsidian/plugins/obsidian-snippets-manager",
-	"/Users/xy/obsidian-demo/.obsidian/plugins/obsidian-snippets-manager"
+	"/Users/xy/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian-demo/.obsidian/plugins/obsidian-snippets-manager",
+	"/Users/xy/Library/Mobile Documents/iCloud~md~obsidian/Documents/bfcs/.obsidian/plugins/obsidian-snippets-manager",
 ];
 
 const copyFiles = () => {
