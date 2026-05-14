@@ -26,16 +26,11 @@ export default function snippetsMenu(
   const menuDom = (menu as any).dom as HTMLElement;
   menuDom.addClass("MySnippets-statusbar-menu");
   
-  // Prevent menu from closing when clicking inside the menu container
+  // Prevent menu from closing when clicking anywhere inside the menu container
   ["mousedown", "mouseup", "click", "contextmenu", "pointerdown", "pointerup"].forEach((type) => {
     menuDom.addEventListener(type, (e) => {
-      const target = e.target as HTMLElement;
-      // If we're clicking the menu container itself or a menu item (but not a button/toggle inside it)
-      if (target === menuDom || target.closest(".menu-item") && !target.closest("button") && !target.closest(".checkbox-container")) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    }, { capture: true });
+      e.stopPropagation();
+    });
   });
 
   const windowX = window.innerWidth;
@@ -101,7 +96,10 @@ export default function snippetsMenu(
         });
       deleteButton.buttonEl.addClass("MS-DeleteSnippet");
 
-      // No longer need individual listeners here as the container-level capture listener handles it
+      // Prevent Obsidian from closing the menu when clicking the item or its children
+      ["mousedown", "mouseup", "click", "contextmenu", "pointerdown", "pointerup"].forEach((type) => {
+        snippetElementDom.addEventListener(type, (e) => e.stopPropagation());
+      });
     });
   });
 
@@ -149,7 +147,10 @@ export default function snippetsMenu(
     addButton.buttonEl.addClass("MySnippetsButton");
     addButton.buttonEl.addClass("MS-Add");
 
-    // No longer need individual listeners here as the container-level capture listener handles it
+    // Prevent Obsidian from closing the menu when clicking the actions item or its children
+    ["mousedown", "mouseup", "click", "contextmenu", "pointerdown", "pointerup"].forEach((type) => {
+      actionsDom.addEventListener(type, (e) => e.stopPropagation());
+    });
   });
 
   menu.showAtPosition({
